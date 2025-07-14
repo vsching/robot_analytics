@@ -1,0 +1,182 @@
+<context>
+# Overview
+Trading Strategy Confluence Analyzer is a web-based system designed to help traders upload, manage, and analyze multiple trading strategies to identify confluence patterns and optimize multi-strategy execution. The system addresses the challenge of managing multiple trading strategies by providing comprehensive performance analysis, monthly/weekly breakdowns, and confluence detection to identify when multiple strategies align for stronger trading signals.
+
+# Core Features
+
+## Strategy Management
+- CSV File Upload: Users can upload trading data via drag-and-drop interface with validation for required columns (date, price, quantity, P&L)
+- Strategy Labeling: Assign unique custom names to each strategy for easy identification
+- Data Operations: Replace existing data, append new trades, or delete entire strategies with confirmation prompts
+- Multi-format Support: Compatible with TradingView, MetaTrader, and custom CSV formats
+
+## Performance Analysis
+- Monthly Breakdown: Display P&L summaries, trade counts, win rates, and performance metrics organized by month
+- Weekly Breakdown: Granular weekly analysis showing trade frequency, performance patterns, and trend identification
+- Key Metrics: Calculate total P&L, win rate, profit factor, Sharpe ratio, maximum drawdown, and risk-adjusted returns
+- Rolling Analysis: 30-day rolling performance windows for trend identification
+
+## Confluence Detection
+- Multi-Strategy Dashboard: Side-by-side comparison with correlation analysis and performance ranking
+- Signal Overlap Analysis: Identify when multiple strategies signal simultaneously with confluence strength scoring
+- Correlation Heatmaps: Visual representation of strategy relationships
+- Combined Performance: Analyze how strategies perform together vs individually
+
+## Visualization & Reporting
+- Interactive Charts: Monthly/weekly P&L charts, cumulative returns, drawdown visualization using Plotly
+- Data Tables: Sortable/filterable trade data with export capabilities (CSV, Excel)
+- Dashboard Views: Overview dashboard, individual strategy pages, dedicated confluence analysis section
+
+# User Experience
+
+## User Personas
+- Active Traders: Managing 3-10 different trading strategies across various markets
+- Trading Analysts: Analyzing historical performance data to optimize strategy selection
+- Portfolio Managers: Evaluating strategy confluence for risk management
+
+## Key User Flows
+1. Upload Flow: Drag CSV → Validate → Label Strategy → View Summary
+2. Analysis Flow: Select Strategy → View Metrics → Drill into Monthly/Weekly → Export Results
+3. Confluence Flow: Select Multiple Strategies → View Correlations → Identify Overlaps → Analyze Combined Performance
+
+## UI/UX Considerations
+- Clean, intuitive Streamlit interface requiring minimal training
+- Responsive design for desktop and tablet use
+- Clear navigation between analysis sections
+- Performance metric cards for at-a-glance insights
+</context>
+<PRD>
+# Technical Architecture
+
+## System Components
+- Frontend: Streamlit 1.28+ for rapid development and interactive UI
+- Backend: Python 3.9+ with pandas for data processing
+- Database: SQLite for local storage (PostgreSQL migration path)
+- Analytics Engine: NumPy, SciPy, scikit-learn for calculations
+- Visualization: Plotly for interactive charts, Streamlit-aggrid for tables
+
+## Data Models
+- Strategies Table: id, name, description, created_at, updated_at, total_trades, total_pnl
+- Trades Table: id, strategy_id, trade_date, symbol, side, entry_price, exit_price, quantity, pnl, commission
+- Performance Metrics Cache: strategy_id, period_type, period_start/end, metrics (pnl, win_rate, profit_factor)
+- Confluence Analysis: strategy pairs, correlation_coefficient, overlap_count, confluence_strength
+
+## APIs and Integrations
+- CSV Processing API: validate_csv(), standardize_data(), detect_format()
+- Analytics API: calculate_monthly_metrics(), calculate_key_metrics(), calculate_rolling_metrics()
+- Confluence API: find_signal_overlaps(), calculate_correlation(), analyze_confluence_performance()
+- Export API: generate CSV/Excel/PDF reports
+
+## Infrastructure Requirements
+- Local deployment initially (no cloud dependencies)
+- Support for 100MB CSV files and 100k trades per strategy
+- Session-based data management
+- Caching for performance optimization
+
+# Development Roadmap
+
+## Phase 1: MVP Foundation
+- Project setup with Streamlit skeleton and SQLite database
+- CSV upload interface with validation and error handling
+- Basic strategy CRUD operations (create, read, update, delete)
+- Monthly/weekly performance breakdown tables
+- Simple P&L and win rate calculations
+- Basic UI with strategy management and performance pages
+
+## Phase 2: Enhanced Analytics
+- Advanced metrics: Sharpe ratio, Sortino ratio, profit factor, maximum drawdown
+- Interactive Plotly charts: cumulative returns, drawdown visualization
+- Multi-strategy comparison with side-by-side tables
+- Correlation analysis between strategies
+- Performance ranking and scoring system
+- Export functionality (CSV, Excel, PDF)
+- UI/UX improvements with metric cards and better layouts
+
+## Phase 3: Confluence System
+- Signal overlap detection algorithms
+- Confluence strength scoring based on time windows
+- Correlation matrix heatmaps
+- Risk-return scatter plots
+- Combined vs individual performance analysis
+- Portfolio risk calculations
+- Concentration risk analysis
+- Performance optimization and caching
+
+## Phase 4: Future Enhancements
+- Real-time data connections
+- Machine learning insights for pattern detection
+- Multi-user support with authentication
+- Cloud deployment options
+- REST API for external integrations
+- Mobile-responsive design
+- Advanced risk management tools
+
+# Logical Dependency Chain
+
+## Foundation Layer (Must Build First)
+1. Database schema and connection management
+2. CSV processor with validation
+3. Basic Streamlit app structure
+4. Strategy data model and CRUD operations
+
+## Core Functionality Layer
+1. Trade data storage and retrieval
+2. Basic performance calculations (P&L, win rate)
+3. Monthly/weekly aggregation logic
+4. Simple data display tables
+
+## Analytics Layer (Builds on Core)
+1. Advanced metric calculations
+2. Time-series analysis functions
+3. Visualization components
+4. Export functionality
+
+## Confluence Layer (Requires Analytics)
+1. Multi-strategy data structures
+2. Overlap detection algorithms
+3. Correlation calculations
+4. Combined performance analysis
+
+## Enhancement Layer (After MVP)
+1. Performance optimization
+2. Advanced visualizations
+3. Risk analysis tools
+4. External integrations
+
+# Risks and Mitigations
+
+## Technical Challenges
+- Large Dataset Performance: Implement pagination and lazy loading, use caching strategically
+- Data Format Variations: Build flexible CSV parser with format detection
+- Calculation Accuracy: Extensive unit testing for all metrics, validation against known results
+- Memory Management: Stream processing for large files, cleanup temporary data
+
+## MVP Scoping
+- Feature Creep Risk: Strict phase boundaries, MVP focus on core upload/analyze/compare
+- Complexity Management: Start with simple metrics, add advanced features incrementally
+- User Adoption: Regular testing with sample data, intuitive UI design
+
+## Resource Constraints
+- Development Time: Use Streamlit for rapid prototyping, leverage existing libraries
+- Testing Coverage: Prioritize critical path testing, use sample datasets
+- Documentation: Document as you build, inline comments for complex logic
+
+# Appendix
+
+## Sample CSV Formats
+- TradingView: date, symbol, side, qty, price, commission
+- MetaTrader: ticket, open_time, type, size, symbol, price, sl, tp, close_time, close_price, commission, swap, profit
+- Generic: date, symbol, direction, quantity, entry_price, exit_price, pnl
+
+## Key Performance Formulas
+- Win Rate = (Winning Trades / Total Trades) × 100
+- Profit Factor = Sum of Profits / Sum of Losses
+- Sharpe Ratio = (Mean Return - Risk Free Rate) / Standard Deviation
+- Maximum Drawdown = Maximum peak to trough decline
+
+## Technology Rationale
+- Streamlit: Rapid development, built-in components, easy deployment
+- SQLite: Zero configuration, portable, sufficient for single-user
+- Plotly: Interactive charts, professional appearance, good Streamlit integration
+- Pandas: Industry standard for data manipulation, excellent CSV handling
+</PRD>
