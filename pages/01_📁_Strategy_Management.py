@@ -7,7 +7,7 @@ import io
 import time
 from datetime import datetime
 
-from src.utils import CSVProcessor, ValidationSeverity, get_session_manager
+from src.utils import CSVProcessor, ValidationSeverity, get_session_manager, require_authentication
 from src.services import StrategyManager
 from src.models import Strategy, Trade
 from src.components import FileUploadComponent, StrategySelector, UploadFeedback, StrategyForms, StrategyFilters
@@ -474,4 +474,5 @@ def formats_tab():
 
 
 if __name__ == "__main__":
-    main()
+    # Apply authentication
+    require_authentication(main)()

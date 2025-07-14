@@ -10,6 +10,7 @@ from .visualization import VisualizationComponents
 from .comparison_dashboard import ComparisonDashboard
 from .confluence_dashboard import ConfluenceDashboard
 from .export_dashboard import ExportDashboard
+from .login import LoginComponent, check_authentication
 
 __all__ = [
     'FileUploadComponent',
@@ -23,5 +24,7 @@ __all__ = [
     'VisualizationComponents',
     'ComparisonDashboard',
     'ConfluenceDashboard',
-    'ExportDashboard'
+    'ExportDashboard',
+    'LoginComponent',
+    'check_authentication'
 ]

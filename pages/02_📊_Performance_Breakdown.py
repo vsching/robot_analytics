@@ -14,6 +14,7 @@ from src.analytics.analytics_engine import AnalyticsEngine
 from src.analytics.cache_manager import MetricsCacheManager
 from src.services.strategy_manager import StrategyManager
 from src.utils.session_state import SessionStateManager
+from src.utils import require_authentication
 
 
 # Page configuration
@@ -36,10 +37,12 @@ def init_components():
     cache_manager = MetricsCacheManager()
     return strategy_manager, analytics_engine, cache_manager
 
-strategy_manager, analytics_engine, cache_manager = init_components()
+def main():
+    """Main function for the Performance Breakdown page."""
+    strategy_manager, analytics_engine, cache_manager = init_components()
 
-# Header
-st.title("📊 Performance Breakdown")
+    # Header
+    st.title("📊 Performance Breakdown")
 st.markdown("""
 Analyze your trading strategy performance with detailed monthly and weekly breakdowns.
 View aggregated metrics, identify patterns, and export data for further analysis.
