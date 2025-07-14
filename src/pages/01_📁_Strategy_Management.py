@@ -7,11 +7,10 @@ import io
 import time
 from datetime import datetime
 
-from src.utils import CSVProcessor, ValidationSeverity
-from src.db import StrategyRepository, TradeRepository, get_db_manager
-from src.models import Strategy
-from src.components.file_upload import FileUploadComponent
-from src.components.strategy_selector import StrategySelector
+from src.utils import CSVProcessor, ValidationSeverity, get_session_manager
+from src.services import StrategyManager
+from src.models import Strategy, Trade
+from src.components import FileUploadComponent, StrategySelector, UploadFeedback, StrategyForms, StrategyFilters
 from config import config
 
 
@@ -22,15 +21,21 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize repositories
-strategy_repo = StrategyRepository()
-trade_repo = TradeRepository()
+# Initialize services
+strategy_manager = StrategyManager()
 csv_processor = CSVProcessor()
+strategy_forms = StrategyForms(strategy_manager)
+strategy_filters = StrategyFilters(strategy_manager)
+session_manager = get_session_manager()
 
 
 def main():
     st.title("📁 Strategy Management")
     st.markdown("Upload CSV files, manage trading strategies, and organize your trading data.")
+    
+    # Show active strategy if set
+    if session_manager.active_strategy:
+        st.info(f"🎯 Active Strategy: **{session_manager.active_strategy.name}**")
     
     # Create tabs
     tab1, tab2, tab3 = st.tabs(["📤 Upload New Data", "📊 Manage Strategies", "ℹ️ Supported Formats"])
@@ -53,12 +58,21 @@ def upload_tab():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        existing_strategies = strategy_repo.get_active_strategies()
+        existing_strategies = strategy_manager.get_all_strategies()
         strategy_names = ["Create New Strategy"] + [s.name for s in existing_strategies]
+        
+        # Default to active strategy if set
+        default_index = 0
+        if session_manager.active_strategy:
+            try:
+                default_index = strategy_names.index(session_manager.active_strategy.name)
+            except ValueError:
+                pass
         
         selected_strategy = st.selectbox(
             "Select Strategy",
             strategy_names,
+            index=default_index,
             help="Choose an existing strategy or create a new one"
         )
     
@@ -119,7 +133,8 @@ def process_upload(uploaded_file, selected_strategy: str, upload_action: str,
             return
         
         # Check if strategy name already exists
-        if strategy_repo.get_by_name(new_strategy_name.strip()):
+        existing = strategy_manager.repository.get_by_name(new_strategy_name.strip())
+        if existing:
             st.error(f"Strategy '{new_strategy_name}' already exists. Please choose a different name.")
             return
     
@@ -219,17 +234,23 @@ def process_file(file_content: bytes, filename: str, selected_strategy: str,
         progress_bar.progress(20)
         
         if selected_strategy == "Create New Strategy":
-            strategy = Strategy(
+            strategy, error = strategy_manager.create_strategy(
                 name=new_strategy_name.strip(),
-                description=new_strategy_desc.strip() if new_strategy_desc else None
+                description=new_strategy_desc.strip() if new_strategy_desc else ""
             )
-            strategy = strategy_repo.create(strategy)
+            if error:
+                st.error(f"Failed to create strategy: {error}")
+                return
             st.success(f"✅ Created new strategy: {strategy.name}")
+            # Set as active strategy
+            session_manager.set_active_strategy(strategy.id)
         else:
-            strategy = strategy_repo.get_by_name(selected_strategy)
+            strategy = strategy_manager.repository.get_by_name(selected_strategy)
             if not strategy:
                 st.error(f"Strategy '{selected_strategy}' not found")
                 return
+            # Set as active strategy
+            session_manager.set_active_strategy(strategy.id)
         
         # Step 2: Process CSV
         status_text.text("Processing CSV file...")
@@ -252,22 +273,21 @@ def process_file(file_content: bytes, filename: str, selected_strategy: str,
         progress_bar.progress(60)
         
         if upload_action == "Replace" and selected_strategy != "Create New Strategy":
-            # Delete existing trades
-            deleted_count = trade_repo.delete_by_strategy(strategy.id)
-            if deleted_count > 0:
-                st.info(f"Removed {deleted_count} existing trades")
+            # Replace all trades
+            saved_count, error = strategy_manager.replace_trades(strategy.id, trades)
+            if error:
+                st.error(f"Failed to save trades: {error}")
+                return
+        else:
+            # Append trades
+            saved_count, error = strategy_manager.append_trades(strategy.id, trades)
+            if error:
+                st.error(f"Failed to save trades: {error}")
+                return
         
-        # Step 4: Save trades
-        status_text.text("Saving trades to database...")
-        progress_bar.progress(80)
-        
-        saved_count = trade_repo.bulk_create(trades)
-        
-        # Step 5: Update strategy statistics
+        # Statistics are automatically updated by the manager
         status_text.text("Updating strategy statistics...")
         progress_bar.progress(90)
-        
-        strategy_repo.update_stats(strategy.id)
         
         # Complete
         progress_bar.progress(100)
@@ -285,16 +305,15 @@ def process_file(file_content: bytes, filename: str, selected_strategy: str,
         
         # Show summary statistics
         if saved_count > 0:
-            summary = trade_repo.get_trade_summary(strategy.id)
+            summary = strategy_manager.get_strategy_statistics(strategy.id)
             
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("Total Trades", summary.get('total_trades', 0))
+                st.metric("Total Trades", summary.get('trade_count', 0))
             with col2:
                 st.metric("Total P&L", f"${summary.get('total_pnl', 0):,.2f}")
             with col3:
-                win_rate = (summary.get('winning_trades', 0) / summary.get('total_trades', 1)) * 100
-                st.metric("Win Rate", f"{win_rate:.1f}%")
+                st.metric("Win Rate", f"{summary.get('win_rate', 0):.1f}%")
             with col4:
                 st.metric("Avg Trade", f"${summary.get('avg_pnl', 0):,.2f}")
         
@@ -312,53 +331,118 @@ def manage_tab():
     """Manage existing strategies."""
     st.header("Manage Strategies")
     
-    # Get all strategies
-    strategies = strategy_repo.get_active_strategies()
+    # Add new strategy button
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        if st.button("➕ New Strategy", type="primary"):
+            st.session_state['show_create_form'] = True
+    
+    # Show create form if requested
+    if st.session_state.get('show_create_form', False):
+        created_strategy, submitted = strategy_forms.create_strategy_form()
+        if submitted:
+            st.session_state['show_create_form'] = False
+            if created_strategy:
+                # Set as active strategy
+                session_manager.set_active_strategy(created_strategy.id)
+                st.rerun()
+    
+    st.divider()
+    
+    # Render filters
+    filters = strategy_filters.render_filters()
+    
+    # Get filter summary
+    filter_summary = strategy_filters.get_filter_summary(filters)
+    if filter_summary != "No filters applied":
+        st.info(f"**Active Filters:** {filter_summary}")
+    
+    # Get all strategies with search
+    search_query = st.text_input(
+        "🔍 Search strategies",
+        placeholder="Search by name or description...",
+        key="strategy_search_main"
+    )
+    
+    # Get strategies
+    if search_query:
+        strategies = strategy_manager.get_strategies(limit=1000, search_query=search_query)
+    else:
+        strategies = strategy_manager.get_all_strategies()
+    
+    # Apply filters
+    if filters:
+        strategies = strategy_filters.apply_filters(strategies, filters)
     
     if not strategies:
-        st.info("No strategies found. Upload data to create your first strategy.")
+        if search_query or filters:
+            st.info("No strategies found matching your criteria.")
+        else:
+            st.info("No strategies found. Click 'New Strategy' to create your first strategy.")
         return
     
-    # Strategy list
-    for strategy in strategies:
-        with st.expander(f"📊 {strategy.name}", expanded=False):
-            col1, col2, col3 = st.columns([2, 1, 1])
-            
-            with col1:
-                st.write(f"**Description:** {strategy.description or 'No description'}")
-                st.write(f"**Created:** {strategy.created_at.strftime('%Y-%m-%d %H:%M')}")
-                st.write(f"**Last Updated:** {strategy.updated_at.strftime('%Y-%m-%d %H:%M')}")
-            
-            with col2:
-                st.metric("Total Trades", f"{strategy.total_trades:,}")
-                st.metric("Total P&L", f"${float(strategy.total_pnl):,.2f}")
-            
-            with col3:
-                st.write("**Actions:**")
-                
-                if st.button("📝 Edit", key=f"edit_{strategy.id}"):
-                    edit_strategy(strategy)
-                
-                if st.button("🗑️ Delete", key=f"delete_{strategy.id}"):
-                    if st.confirm(f"Delete strategy '{strategy.name}' and all its trades?"):
-                        strategy_repo.delete(strategy.id)
-                        st.success(f"Deleted strategy: {strategy.name}")
-                        st.rerun()
-                
-                if st.button("📥 Export Trades", key=f"export_{strategy.id}"):
-                    export_trades(strategy)
+    # Display count
+    st.caption(f"Found {len(strategies)} strategies")
+    
+    # Display strategies with custom page size
+    page_size = filters.get('page_size', 10)
+    selected = strategy_forms.strategy_list_view(strategies, page_size=page_size, show_search=False)
+    
+    if selected:
+        # Handle export if requested
+        export_trades(selected)
 
 
 def edit_strategy(strategy: Strategy):
     """Edit strategy details."""
-    # Implementation for editing strategy
-    st.info("Edit functionality coming soon!")
+    if strategy_forms.edit_strategy_dialog(strategy):
+        st.rerun()
 
 
 def export_trades(strategy: Strategy):
     """Export strategy trades."""
-    # Implementation for exporting trades
-    st.info("Export functionality coming soon!")
+    try:
+        # Get trades from database
+        from src.db import get_db_manager
+        db_manager = get_db_manager()
+        
+        with db_manager.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT * FROM trades WHERE strategy_id = ? ORDER BY trade_date""",
+                (strategy.id,)
+            )
+            trades = cursor.fetchall()
+            
+            if not trades:
+                st.warning("No trades found for this strategy")
+                return
+            
+            # Convert to DataFrame
+            import pandas as pd
+            df = pd.DataFrame(trades, columns=[
+                'id', 'strategy_id', 'trade_date', 'symbol', 'side',
+                'entry_price', 'exit_price', 'quantity', 'pnl', 'commission'
+            ])
+            
+            # Remove internal columns
+            df = df.drop(columns=['id', 'strategy_id'])
+            
+            # Generate CSV
+            csv = df.to_csv(index=False)
+            
+            # Download button
+            st.download_button(
+                label="📥 Download CSV",
+                data=csv,
+                file_name=f"{strategy.name.replace(' ', '_')}_trades.csv",
+                mime="text/csv"
+            )
+            
+            st.success(f"Ready to export {len(trades)} trades")
+            
+    except Exception as e:
+        st.error(f"Failed to export trades: {str(e)}")
 
 
 def formats_tab():

@@ -6,6 +6,7 @@ from .csv_validator import CSVValidator, ValidationResult, ValidationIssue, Vali
 from .csv_transformer import CSVTransformer
 from .csv_formats import Platform, CSVFormat, FORMATS, get_format
 from .csv_streamer import CSVStreamer, StreamingCSVProcessor, ChunkResult
+from .session_state import SessionStateManager, get_session_manager
 
 __all__ = [
     'CSVProcessor',
@@ -21,5 +22,7 @@ __all__ = [
     'get_format',
     'CSVStreamer',
     'StreamingCSVProcessor',
-    'ChunkResult'
+    'ChunkResult',
+    'SessionStateManager',
+    'get_session_manager'
 ]
