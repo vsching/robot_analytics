@@ -1,22 +1,36 @@
 """Strategy selection component."""
 
 import streamlit as st
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 from src.models import Strategy
-from src.db import StrategyRepository
+from src.services.strategy_manager import StrategyManager
 
 
 class StrategySelector:
     """Component for selecting strategies."""
     
-    def __init__(self, strategy_repo: Optional[StrategyRepository] = None):
+    def __init__(self, strategy_manager: Union[StrategyManager, None] = None):
         """
         Initialize strategy selector.
         
         Args:
-            strategy_repo: Strategy repository instance
+            strategy_manager: Strategy manager instance
         """
-        self.strategy_repo = strategy_repo or StrategyRepository()
+        self.strategy_manager = strategy_manager or StrategyManager()
+    
+    def render(self, key: str = "strategy_select", label: str = "Select Strategy") -> Optional[int]:
+        """
+        Render strategy selector and return selected strategy ID.
+        
+        Args:
+            key: Unique key for the component
+            label: Label for the selectbox
+            
+        Returns:
+            Selected strategy ID or None
+        """
+        strategy, is_new = self.render_single(key=key, include_create_option=False, label=label)
+        return strategy.id if strategy else None
     
     def render_single(self, 
                      key: str = "strategy_select",
@@ -33,7 +47,7 @@ class StrategySelector:
         Returns:
             Tuple of (selected_strategy, is_new_strategy)
         """
-        strategies = self.strategy_repo.get_active_strategies()
+        strategies = self.strategy_manager.get_all_strategies()
         
         if include_create_option:
             options = ["📝 Create New Strategy"] + [s.name for s in strategies]
@@ -73,7 +87,7 @@ class StrategySelector:
         Returns:
             List of selected strategies
         """
-        strategies = self.strategy_repo.get_active_strategies()
+        strategies = self.strategy_manager.get_all_strategies()
         
         if len(strategies) < min_selection:
             st.warning(f"At least {min_selection} strategies required. Currently have {len(strategies)}.")
@@ -110,7 +124,7 @@ class StrategySelector:
         Returns:
             Tuple of two selected strategies
         """
-        strategies = self.strategy_repo.get_active_strategies()
+        strategies = self.strategy_manager.get_all_strategies()
         
         if len(strategies) < 2:
             st.warning("At least 2 strategies required for comparison.")

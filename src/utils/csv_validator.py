@@ -104,6 +104,10 @@ class CSVValidator:
         
         result = ValidationResult(is_valid=True)
         
+        # Special handling for strategy backtest format
+        if platform == Platform.STRATEGY_BACKTEST:
+            return self._validate_strategy_backtest(df, format_spec)
+        
         # Basic validation
         self._validate_basic(df, result)
         
@@ -395,3 +399,65 @@ class CSVValidator:
             stats['column_stats'][col] = col_stats
         
         return stats
+    
+    def _validate_strategy_backtest(self, df: pd.DataFrame, format_spec: CSVFormat) -> ValidationResult:
+        """Special validation for strategy backtest format."""
+        result = ValidationResult(is_valid=True)
+        
+        # Check if empty
+        if df.empty:
+            result.add_issue(ValidationIssue(
+                severity=ValidationSeverity.ERROR,
+                message="CSV file is empty"
+            ))
+            return result
+        
+        # Check required columns
+        missing_columns = format_spec.required_columns - set(df.columns)
+        if missing_columns:
+            result.add_issue(ValidationIssue(
+                severity=ValidationSeverity.ERROR,
+                message=f"Missing required columns: {missing_columns}"
+            ))
+            return result
+        
+        # Check Trade # column
+        if 'Trade #' in df.columns:
+            # Each trade should have exactly 2 rows (entry and exit)
+            trade_counts = df['Trade #'].value_counts()
+            invalid_trades = trade_counts[trade_counts != 2]
+            if not invalid_trades.empty:
+                result.add_issue(ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Trades with invalid row count: {invalid_trades.index.tolist()}"
+                ))
+        
+        # Check Type column
+        if 'Type' in df.columns:
+            valid_types = ['Entry short', 'Exit short', 'Entry long', 'Exit long']
+            invalid_types = df[~df['Type'].isin(valid_types)]['Type'].unique()
+            if len(invalid_types) > 0:
+                result.add_issue(ValidationIssue(
+                    severity=ValidationSeverity.INFO,
+                    message=f"Non-standard type values: {invalid_types}"
+                ))
+        
+        # Check Date/Time format
+        if 'Date/Time' in df.columns:
+            try:
+                pd.to_datetime(df['Date/Time'], format='%Y-%m-%d %H:%M')
+            except:
+                result.add_issue(ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message="Some dates could not be parsed"
+                ))
+        
+        # Statistics
+        result.statistics = {
+            'total_rows': len(df),
+            'total_trades': df['Trade #'].nunique() if 'Trade #' in df.columns else 0,
+            'columns': df.columns.tolist(),
+            'memory_usage_mb': df.memory_usage(deep=True).sum() / 1024 / 1024
+        }
+        
+        return result

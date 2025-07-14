@@ -8,7 +8,7 @@ import io
 from .csv_detector import CSVFormatDetector
 from .csv_validator import CSVValidator, ValidationResult
 from .csv_transformer import CSVTransformer
-from .csv_formats import Platform, CSVFormat
+from .csv_formats import Platform, CSVFormat, get_format
 from ..models import Trade
 from config import config
 
@@ -73,7 +73,7 @@ class CSVProcessor:
                 return [], validation_result, metadata
             
             # Step 4: Transform
-            transformed_df = self.transformer.transform(df, platform, format_spec)
+            transformed_df = self.transformer.transform(df, platform, format_spec, filename)
             
             # Step 5: Convert to Trade objects
             trades = self.transformer.to_trades(transformed_df, strategy_id)
@@ -117,7 +117,7 @@ class CSVProcessor:
             
             # Transform for preview
             if validation_result.is_valid or len(validation_result.get_errors()) == 0:
-                preview_df = self.transformer.transform(df, platform, format_spec)
+                preview_df = self.transformer.transform(df, platform, format_spec, filename)
             else:
                 preview_df = df
             

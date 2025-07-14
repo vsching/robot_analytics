@@ -18,7 +18,26 @@ class StrategyRepository(BaseRepository[Strategy]):
     """Repository for strategy-specific operations."""
     
     def __init__(self, db_manager: DatabaseManager):
-        super().__init__(db_manager, 'strategies', Strategy)
+        super().__init__('strategies', Strategy)
+        self.db_manager = db_manager
+    
+    def _row_to_model(self, row: tuple, columns: List[str]) -> Strategy:
+        """Convert database row to Strategy model."""
+        data = dict(zip(columns, row))
+        return Strategy.from_dict(data)
+    
+    def _model_to_params(self, model: Strategy) -> Dict[str, Any]:
+        """Convert Strategy model to database parameters."""
+        return {
+            'id': model.id,
+            'name': model.name,
+            'description': model.description,
+            'total_trades': model.total_trades,
+            'total_pnl': float(model.total_pnl),
+            'is_active': 1 if model.is_active else 0,
+            'created_at': model.created_at,
+            'updated_at': model.updated_at
+        }
     
     def get_by_name(self, name: str) -> Optional[Strategy]:
         """Get strategy by name."""
@@ -29,7 +48,10 @@ class StrategyRepository(BaseRepository[Strategy]):
                 (name,)
             )
             row = cursor.fetchone()
-            return self._row_to_model(row) if row else None
+            if row:
+                columns = [desc[0] for desc in cursor.description]
+                return self._row_to_model(row, columns)
+            return None
     
     def search(self, query: str, limit: int = 50, offset: int = 0) -> List[Strategy]:
         """Search strategies by name or description."""
@@ -45,7 +67,8 @@ class StrategyRepository(BaseRepository[Strategy]):
                 (f'%{query}%', f'%{query}%', limit, offset)
             )
             rows = cursor.fetchall()
-            return [self._row_to_model(row) for row in rows]
+            columns = [desc[0] for desc in cursor.description]
+            return [self._row_to_model(row, columns) for row in rows]
     
     def update_statistics(self, strategy_id: int) -> None:
         """Update strategy statistics (total_trades, total_pnl)."""
@@ -156,7 +179,8 @@ class StrategyManager:
                     "SELECT * FROM strategies WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1000"
                 )
                 rows = cursor.fetchall()
-                return [self.repository._row_to_model(row) for row in rows]
+                columns = [desc[0] for desc in cursor.description]
+                return [self.repository._row_to_model(row, columns) for row in rows]
     
     def update_strategy(self, 
                        strategy_id: int, 
@@ -342,7 +366,8 @@ class StrategyManager:
                 "SELECT * FROM strategies WHERE is_active = 0 ORDER BY updated_at DESC"
             )
             rows = cursor.fetchall()
-            return [self.repository._row_to_model(row) for row in rows]
+            columns = [desc[0] for desc in cursor.description]
+            return [self.repository._row_to_model(row, columns) for row in rows]
     
     def get_strategy_statistics(self, strategy_id: int) -> Dict[str, Any]:
         """
@@ -412,57 +437,54 @@ class StrategyManager:
                 trade.strategy_id = strategy_id
             
             # Insert trades in a transaction
-            conn = self.db_manager.get_connection()
-            cursor = conn.cursor()
-            
-            # Begin transaction
-            cursor.execute("BEGIN TRANSACTION")
-            
-            try:
-                for trade in trades:
-                    cursor.execute(
-                        """
-                        INSERT INTO trades (
-                            strategy_id, trade_date, symbol, side, 
-                            entry_price, exit_price, quantity, pnl, commission
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                        (
-                            trade.strategy_id,
-                            trade.trade_date,
-                            trade.symbol,
-                            trade.side,
-                            str(trade.entry_price),
-                            str(trade.exit_price) if trade.exit_price else None,
-                            str(trade.quantity),
-                            str(trade.pnl) if trade.pnl else None,
-                            str(trade.commission) if trade.commission else "0"
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Begin transaction
+                cursor.execute("BEGIN TRANSACTION")
+                
+                try:
+                    for trade in trades:
+                        cursor.execute(
+                            """
+                            INSERT INTO trades (
+                                strategy_id, trade_date, symbol, side, 
+                                entry_price, exit_price, quantity, pnl, commission
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                trade.strategy_id,
+                                trade.trade_date,
+                                trade.symbol,
+                                trade.side,
+                                str(trade.entry_price),
+                                str(trade.exit_price) if trade.exit_price else None,
+                                str(trade.quantity),
+                                str(trade.pnl) if trade.pnl else None,
+                                str(trade.commission) if trade.commission else "0"
+                            )
                         )
-                    )
-                
-                # Commit transaction
-                cursor.execute("COMMIT")
-                
-                # Update strategy statistics
-                self.repository.update_statistics(strategy_id)
-                
-                # Invalidate cache for this strategy
-                self.cache_manager.invalidate_cache(strategy_id)
-                
-                logger.info(f"Appended {len(trades)} trades to strategy ID: {strategy_id}")
-                return len(trades), None
-                
-            except Exception as e:
-                # Rollback on error
-                cursor.execute("ROLLBACK")
-                raise e
+                    
+                    # Commit transaction
+                    cursor.execute("COMMIT")
+                    
+                    # Update strategy statistics
+                    self.repository.update_statistics(strategy_id)
+                    
+                    # Invalidate cache for this strategy
+                    self.cache_manager.invalidate_cache(strategy_id)
+                    
+                    logger.info(f"Appended {len(trades)} trades to strategy ID: {strategy_id}")
+                    return len(trades), None
+                    
+                except Exception as e:
+                    # Rollback on error
+                    cursor.execute("ROLLBACK")
+                    raise e
             
         except Exception as e:
             logger.error(f"Error appending trades: {str(e)}")
             return 0, f"Failed to append trades: {str(e)}"
-        finally:
-            if conn:
-                conn.close()
     
     def replace_trades(self, strategy_id: int, trades: List[Trade]) -> Tuple[int, Optional[str]]:
         """

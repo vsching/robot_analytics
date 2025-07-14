@@ -13,6 +13,7 @@ class Platform(Enum):
     CTRADER = "cTrader"
     NINJATRADER = "NinjaTrader"
     INTERACTIVE_BROKERS = "InteractiveBrokers"
+    STRATEGY_BACKTEST = "StrategyBacktest"
     GENERIC = "Generic"
     UNKNOWN = "Unknown"
 
@@ -162,6 +163,29 @@ FORMATS = {
         },
         date_columns=["TradeDate", "OrderTime", "TradeTime"],
         date_formats=["%Y%m%d", "%Y%m%d;%H%M%S", "%Y-%m-%d %H:%M:%S"]
+    ),
+    
+    Platform.STRATEGY_BACKTEST: CSVFormat(
+        platform=Platform.STRATEGY_BACKTEST,
+        name="Strategy Backtest",
+        description="Trading strategy backtest format with entry/exit pairs",
+        required_columns={"Trade #", "Type", "Signal", "Date/Time", "Price USDT", "Quantity", "P&L USDT"},
+        optional_columns={"P&L %", "Run-up USDT", "Run-up %", "Drawdown USDT", "Drawdown %", "Cumulative P&L USDT", "Cumulative P&L %"},
+        column_mappings={
+            "Trade #": "trade_id",
+            "Type": "trade_type",
+            "Signal": "signal",
+            "Date/Time": "trade_date",
+            "Price USDT": "price",
+            "Quantity": "quantity",
+            "P&L USDT": "pnl",
+            "P&L %": "pnl_percent",
+            "Run-up USDT": "runup",
+            "Drawdown USDT": "drawdown",
+            "Cumulative P&L USDT": "cumulative_pnl"
+        },
+        date_columns=["Date/Time"],
+        date_formats=["%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]
     ),
     
     Platform.GENERIC: CSVFormat(

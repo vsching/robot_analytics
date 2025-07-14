@@ -57,7 +57,8 @@ class CSVTransformer:
         }
     
     def transform(self, df: pd.DataFrame, platform: Platform, 
-                 format_spec: Optional[CSVFormat] = None) -> pd.DataFrame:
+                 format_spec: Optional[CSVFormat] = None,
+                 filename: Optional[str] = None) -> pd.DataFrame:
         """
         Transform platform-specific CSV data to standardized format.
         
@@ -65,6 +66,7 @@ class CSVTransformer:
             df: Input DataFrame
             platform: Detected platform
             format_spec: Optional format specification
+            filename: Optional filename for extracting metadata
             
         Returns:
             Transformed DataFrame with standardized columns
@@ -77,23 +79,27 @@ class CSVTransformer:
         # Create a copy to avoid modifying original
         transformed_df = df.copy()
         
-        # Step 1: Rename columns based on mapping
-        transformed_df = self._rename_columns(transformed_df, format_spec)
-        
-        # Step 2: Transform data types
-        transformed_df = self._transform_data_types(transformed_df, format_spec)
-        
-        # Step 3: Standardize values
-        transformed_df = self._standardize_values(transformed_df)
-        
-        # Step 4: Calculate derived fields
-        transformed_df = self._calculate_derived_fields(transformed_df)
-        
-        # Step 5: Select and order standard columns
-        transformed_df = self._select_standard_columns(transformed_df)
-        
-        # Step 6: Final cleanup
-        transformed_df = self._final_cleanup(transformed_df)
+        # Special handling for strategy backtest format
+        if platform == Platform.STRATEGY_BACKTEST:
+            transformed_df = self._transform_strategy_backtest(transformed_df, filename)
+        else:
+            # Step 1: Rename columns based on mapping
+            transformed_df = self._rename_columns(transformed_df, format_spec)
+            
+            # Step 2: Transform data types
+            transformed_df = self._transform_data_types(transformed_df, format_spec)
+            
+            # Step 3: Standardize values
+            transformed_df = self._standardize_values(transformed_df)
+            
+            # Step 4: Calculate derived fields
+            transformed_df = self._calculate_derived_fields(transformed_df)
+            
+            # Step 5: Select and order standard columns
+            transformed_df = self._select_standard_columns(transformed_df)
+            
+            # Step 6: Final cleanup
+            transformed_df = self._final_cleanup(transformed_df)
         
         logger.info(f"Transformation complete. Output has {len(transformed_df)} rows")
         
@@ -360,3 +366,65 @@ class CSVTransformer:
                 continue
         
         return trades
+    
+    def _transform_strategy_backtest(self, df: pd.DataFrame, filename: Optional[str] = None) -> pd.DataFrame:
+        """Special transformation for strategy backtest format."""
+        # Extract symbol from filename if available
+        symbol = "BTCUSDT"  # Default
+        if filename:
+            # Extract from filename pattern like BINANCE_BTCUSDT.P
+            import re
+            match = re.search(r'BINANCE_([A-Z]+)\.P', filename)
+            if match:
+                symbol = match.group(1)
+        
+        # Clean numeric columns (remove commas)
+        numeric_cols = ['Price USDT', 'Quantity', 'P&L USDT', 'P&L %', 
+                       'Run-up USDT', 'Run-up %', 'Drawdown USDT', 'Drawdown %',
+                       'Cumulative P&L USDT', 'Cumulative P&L %']
+        
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.replace(',', '').str.replace('%', '')
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # Process entry/exit pairs
+        trades = []
+        trade_groups = df.groupby('Trade #')
+        
+        for trade_id, group in trade_groups:
+            entry_row = group[group['Type'].str.contains('Entry', case=False)]
+            exit_row = group[group['Type'].str.contains('Exit', case=False)]
+            
+            if not entry_row.empty and not exit_row.empty:
+                entry = entry_row.iloc[0]
+                exit = exit_row.iloc[0]
+                
+                # Determine side from Signal
+                side = 'buy' if 'Long' in entry['Signal'] else 'sell'
+                
+                # Create trade record
+                trade_record = {
+                    'trade_date': pd.to_datetime(entry['Date/Time']),
+                    'symbol': symbol,
+                    'side': side,
+                    'quantity': entry['Quantity'],
+                    'entry_price': entry['Price USDT'],
+                    'exit_price': exit['Price USDT'],
+                    'pnl': entry['P&L USDT'],  # P&L is on the entry row
+                    'commission': 0.0,  # Not provided in this format
+                    'entry_time': pd.to_datetime(entry['Date/Time']).time(),
+                    'exit_time': pd.to_datetime(exit['Date/Time']).time()
+                }
+                
+                trades.append(trade_record)
+        
+        # Convert to DataFrame
+        result_df = pd.DataFrame(trades)
+        
+        # Calculate duration
+        if not result_df.empty:
+            # Just set duration to 0 for now since we only have times, not full timestamps
+            result_df['duration_hours'] = 0.0
+        
+        return result_df
