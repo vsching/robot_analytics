@@ -1,0 +1,690 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Initialize Project Structure and Database Schema",
+        "description": "Set up the project repository with Streamlit framework, create SQLite database schema for strategies and trades, and establish the foundational directory structure",
+        "details": "Create project structure with directories: /app (main application), /data (CSV uploads), /db (SQLite), /utils (helpers), /components (UI components). Initialize requirements.txt with streamlit>=1.28, pandas, numpy, scipy, scikit-learn, plotly, streamlit-aggrid, sqlite3. Create database schema with tables: strategies (id INTEGER PRIMARY KEY, name TEXT UNIQUE, description TEXT, created_at TIMESTAMP, updated_at TIMESTAMP, total_trades INTEGER DEFAULT 0, total_pnl REAL DEFAULT 0), trades (id INTEGER PRIMARY KEY, strategy_id INTEGER, trade_date DATE, symbol TEXT, side TEXT, entry_price REAL, exit_price REAL, quantity REAL, pnl REAL, commission REAL DEFAULT 0, FOREIGN KEY(strategy_id) REFERENCES strategies(id)). Add performance_metrics_cache and confluence_analysis tables as specified. Create db_manager.py with connection pooling and basic CRUD operations.",
+        "testStrategy": "Unit tests for database connection, table creation verification, CRUD operations on strategies and trades tables. Test data integrity constraints, foreign key relationships, and connection pooling under load. Verify SQLite file creation and proper schema initialization.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create directory structure and initial files",
+            "description": "Set up the project directory hierarchy with folders for src, tests, docs, and config. Create initial Python files including __init__.py files, main.py, and configuration files like .gitignore and README.md",
+            "dependencies": [],
+            "details": "Create folders: src/, src/db/, src/models/, src/utils/, tests/, docs/, config/. Initialize empty __init__.py files in each Python package. Create .gitignore with Python-specific exclusions, requirements.txt, setup.py, and a basic README.md with project description.\n<info added on 2025-07-14T04:55:59.671Z>\nCompleted: Created comprehensive directory structure with src/, tests/, docs/, config/, and data/ folders. Added all necessary __init__.py files for Python packages. Created main.py with Streamlit app entry point, .gitignore with Python-specific exclusions, README.md with project overview, and setup.py for package management.\n</info added on 2025-07-14T04:55:59.671Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Set up Python environment and dependencies",
+            "description": "Create a virtual environment, define project dependencies in requirements.txt, and install necessary packages for SQLite database operations, connection pooling, and testing",
+            "dependencies": [
+              1
+            ],
+            "details": "Create virtual environment using venv. Add dependencies to requirements.txt: sqlite3 (built-in), sqlalchemy for ORM capabilities, python-dotenv for environment variables, pytest for testing, black for code formatting, and any additional utility libraries. Install all dependencies and verify the environment setup.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Design and implement SQLite database schema with all tables",
+            "description": "Design the complete database schema including all 4 tables with proper relationships, constraints, and indexes. Create SQL migration scripts and implement the schema initialization code",
+            "dependencies": [
+              2
+            ],
+            "details": "Design 4 interconnected tables with appropriate data types, primary keys, foreign keys, and constraints. Create schema.sql file with CREATE TABLE statements. Implement migrations.py to handle schema versioning and updates. Add indexes for frequently queried columns. Document the schema with an ER diagram.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create database connection manager with pooling",
+            "description": "Implement a robust database connection manager that handles connection pooling, thread safety, and proper resource cleanup for SQLite",
+            "dependencies": [
+              3
+            ],
+            "details": "Create db_manager.py with a ConnectionManager class implementing connection pooling using SQLite's connection pool or a custom solution. Handle concurrent access, connection lifecycle, automatic reconnection on failure, and context managers for proper resource cleanup. Configure pool size, timeout, and other parameters through environment variables.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement basic CRUD operations and utilities",
+            "description": "Create a comprehensive set of CRUD (Create, Read, Update, Delete) operations for all 4 tables, along with utility functions for common database tasks",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement base repository class with generic CRUD methods. Create specific repository classes for each table with custom queries. Add utility functions for bulk operations, transactions, data validation, and query builders. Include error handling, logging, and basic unit tests for all operations.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement CSV Upload and Validation System",
+        "description": "Build the CSV file upload interface with drag-and-drop functionality, format detection, and comprehensive validation for multiple trading platform formats",
+        "details": "Create csv_processor.py with format detection for TradingView (date, symbol, side, qty, price, commission), MetaTrader (ticket, open_time, type, size, symbol, price, sl, tp, close_time, close_price, commission, swap, profit), and generic formats. Implement validate_csv() to check required columns, data types, and date formats. Build standardize_data() to convert all formats to unified schema. Create upload_interface.py using st.file_uploader with drag-and-drop, showing upload progress and validation results. Handle files up to 100MB with streaming processing. Implement error handling with user-friendly messages for missing columns, invalid data types, or corrupt files. Add preview functionality showing first 10 rows after validation.",
+        "testStrategy": "Test with sample CSV files from each supported format, edge cases including empty files, missing columns, invalid data types, mixed date formats, and files exceeding size limits. Verify format detection accuracy, proper error messages, and successful data standardization. Test streaming performance with 100MB files containing 100k+ rows.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create CSV format detection logic for multiple platforms",
+            "description": "Implement detection algorithms to automatically identify CSV formats from different trading platforms (MT4, MT5, TradingView, cTrader, NinjaTrader, etc.)",
+            "dependencies": [],
+            "details": "Develop pattern matching algorithms to detect column headers, delimiters, date formats, and platform-specific structures. Create a format registry with known patterns for each platform.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement validation rules and error handling",
+            "description": "Build comprehensive validation system for uploaded CSV files including data type validation, required fields checking, and format consistency",
+            "dependencies": [
+              1
+            ],
+            "details": "Create validation rules for date/time formats, numeric values, currency pairs, trade types. Implement graceful error handling with descriptive error messages for users.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build data standardization and transformation pipeline",
+            "description": "Develop transformation logic to convert various CSV formats into a unified internal format for analysis",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create field mapping dictionaries, implement data type conversions, handle timezone standardization, normalize currency pair notation, and ensure consistent decimal precision.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop Streamlit upload UI with drag-and-drop",
+            "description": "Create an intuitive file upload interface in Streamlit with drag-and-drop functionality and visual feedback",
+            "dependencies": [],
+            "details": "Implement st.file_uploader with multiple file support, add drag-and-drop zone styling, create upload progress indicators, and design clear user instructions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add file streaming for large files",
+            "description": "Implement streaming processing to handle large CSV files without memory constraints",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Use pandas chunk processing or csv.DictReader for streaming, implement batch processing with configurable chunk sizes, add memory usage monitoring and optimization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create preview and feedback system",
+            "description": "Build a data preview system that shows sample rows, detected format, validation results, and transformation preview",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Display first/last N rows, show detected platform and format details, highlight validation errors inline, provide download option for standardized data, and add format conversion summary.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Create Strategy Management CRUD Operations",
+        "description": "Develop complete strategy creation, reading, updating, and deletion functionality with proper data persistence and user confirmations",
+        "details": "Build strategy_manager.py with create_strategy(name, description) ensuring unique names, read_strategies() with pagination support, update_strategy(id, data) with timestamp updates, and delete_strategy(id) with cascade deletion of related trades. Implement UI components in strategy_pages.py: strategy creation form with name validation, strategy list view with search/filter, edit dialog with current data pre-filled, delete confirmation modal. Add append_trades(strategy_id, new_trades) and replace_trades(strategy_id, new_trades) methods. Create session state management for active strategy selection. Implement strategy statistics calculation on CRUD operations to update total_trades and total_pnl fields.",
+        "testStrategy": "Test CRUD operations with valid and invalid inputs, duplicate strategy names, cascade deletions, concurrent operations. Verify UI state consistency, proper error handling, and data persistence across sessions. Test append vs replace functionality with overlapping and new trade data.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement backend CRUD operations in strategy_manager.py",
+            "description": "Create a comprehensive backend module for handling all strategy-related database operations including create, read, update, and delete functionality",
+            "dependencies": [],
+            "details": "Develop strategy_manager.py with methods for: creating new strategies with validation, retrieving strategies by ID or filtering criteria, updating strategy properties and associations, deleting strategies with proper error handling. Include database transaction management and error handling for all operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create UI forms and dialogs for strategy management",
+            "description": "Build interactive Streamlit components for strategy creation, editing, and viewing with proper form validation and user feedback",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement strategy creation form with fields for name, description, and metadata. Create edit dialog with pre-populated fields and update functionality. Design strategy detail view with formatted display of all properties. Add confirmation dialogs for delete operations. Include form validation and error messaging.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add session state management for active strategy",
+            "description": "Implement Streamlit session state to track and manage the currently selected strategy across page refreshes and user interactions",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create session state variables for active_strategy_id and strategy_data. Implement state persistence across page reloads. Add state update functions for strategy selection, creation, and deletion. Ensure state synchronization with database changes. Handle edge cases for deleted or invalid strategies.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement cascade operations and data integrity",
+            "description": "Ensure referential integrity by implementing proper cascade operations for strategy deletion and updates across related tables",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement cascade delete for strategy_conditions and strategy_events when parent strategy is deleted. Add foreign key constraints and triggers if needed. Create integrity checks before deletion to warn about dependent data. Implement soft delete option to preserve historical data. Add transaction rollback for failed operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build search, filter, and pagination features",
+            "description": "Create advanced UI components for efficiently browsing, searching, and filtering through large sets of trading strategies",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Implement search bar with real-time filtering by strategy name and description. Add filter dropdowns for status, date ranges, and custom tags. Create pagination controls with configurable page size. Add sorting options by name, creation date, and last modified. Include export functionality for filtered results.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Build Performance Calculation Engine",
+        "description": "Implement core performance metrics calculations including P&L summaries, win rates, and basic statistical measures for individual strategies",
+        "details": "Create analytics_engine.py with calculate_pnl_summary(trades) returning total, average, max, min P&L. Implement calculate_win_rate(trades) as (profitable_trades / total_trades) * 100. Build calculate_basic_metrics(trades) including trade count, average win/loss, win/loss ratio. Add calculate_monthly_metrics(trades) and calculate_weekly_metrics(trades) using pandas groupby with proper date handling. Implement calculate_rolling_metrics(trades, window=30) for rolling 30-day windows. Create metric caching system using performance_metrics_cache table with automatic invalidation on data updates. Handle edge cases: no trades, all winners/losers, single trade strategies.",
+        "testStrategy": "Unit test each calculation with known inputs and expected outputs. Test edge cases: empty datasets, single trades, all profitable/losing trades. Verify monthly/weekly aggregation accuracy across year boundaries. Test caching mechanism for performance improvement and cache invalidation on updates.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement basic P&L calculations and summaries",
+            "description": "Create core profit and loss calculation functions including realized/unrealized P&L, total P&L, and basic summaries",
+            "dependencies": [],
+            "details": "Implement functions to calculate: individual trade P&L, cumulative P&L, realized vs unrealized P&L, net profit/loss summaries. Handle different position types (long/short) and account for fees/commissions. Create data structures to store P&L results efficiently.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create win rate and trade statistics calculations",
+            "description": "Build comprehensive trade statistics including win rate, average win/loss, profit factor, and other key trading metrics",
+            "dependencies": [
+              1
+            ],
+            "details": "Calculate: win rate percentage, average winning trade, average losing trade, profit factor, largest win/loss, consecutive wins/losses, risk-reward ratio, expectancy. Group statistics by strategy, symbol, or custom tags.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build time-based aggregations (monthly/weekly)",
+            "description": "Implement time-based grouping and aggregation of trading data for different time periods",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create aggregation functions for: daily, weekly, monthly, quarterly, and yearly periods. Support custom date ranges. Calculate period-specific metrics like monthly returns, weekly win rates. Handle partial periods and timezone considerations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement rolling window metrics",
+            "description": "Create rolling window calculations for moving averages and trend analysis of trading performance",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Implement: rolling P&L calculations, moving average win rates, rolling sharpe ratio, rolling maximum drawdown, rolling volatility. Support variable window sizes (e.g., 7-day, 30-day, 90-day). Optimize for performance with large datasets.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create caching system with invalidation logic",
+            "description": "Build an efficient caching layer to store calculated metrics with smart invalidation strategies",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Design cache structure for different metric types. Implement cache invalidation triggers when new trades are added or existing data is modified. Use memoization for expensive calculations. Support partial cache updates. Include cache warming strategies for frequently accessed metrics.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop Monthly and Weekly Breakdown Tables",
+        "description": "Create interactive data tables displaying performance metrics aggregated by monthly and weekly periods with sorting and filtering capabilities",
+        "details": "Build breakdown_tables.py using streamlit-aggrid for interactive tables. Create monthly_breakdown_table(strategy_id) displaying columns: Month, Total P&L, Trade Count, Win Rate, Average Trade, Best/Worst Trade. Implement weekly_breakdown_table(strategy_id) with similar metrics plus day-of-week analysis. Add period navigation with date range selector. Enable column sorting, filtering, and custom formatting (red/green for losses/profits). Implement export functionality for filtered data. Add summary row showing totals/averages. Create responsive layout adjusting columns for screen size. Cache processed data for performance.",
+        "testStrategy": "Test table rendering with various data volumes (10 to 10k trades). Verify accurate aggregation across different time periods and timezones. Test sorting/filtering functionality, export accuracy, and responsive behavior. Validate summary calculations match individual row data.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement streamlit-aggrid integration and table configuration",
+            "description": "Set up st-aggrid library with customized grid options, column definitions, and theming to match the app design",
+            "dependencies": [],
+            "details": "Install streamlit-aggrid package, configure AgGrid with proper column definitions for metric name, total, monthly columns (Jan-Dec), and action buttons. Set up grid theme, cell renderers for numeric formatting, and base grid options including pagination, row height, and responsive column sizing",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create monthly and weekly aggregation logic with metrics",
+            "description": "Develop data aggregation functions to transform raw trading data into monthly/weekly summaries with calculated metrics",
+            "dependencies": [],
+            "details": "Build aggregation pipeline to group trades by month/week, calculate metrics per period (total trades, win rate, profit factor, average RR), handle missing data periods with zeros, create pivot tables for grid display format, and ensure proper date handling across different timeframes",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add interactive features (sorting, filtering, navigation)",
+            "description": "Implement user interaction capabilities including multi-column sorting, dynamic filtering, and drill-down navigation between views",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Enable column sorting with custom comparators for metrics, add filter controls for date ranges and metric thresholds, implement row selection and click handlers for navigation between monthly/weekly/daily views, add column pinning for metric names, and create toolbar with view toggle buttons",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement export functionality and responsive design",
+            "description": "Add data export capabilities and ensure the grid display adapts properly to different screen sizes",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Implement CSV/Excel export with formatted headers and data, add print-friendly view option, configure responsive column behavior with priority-based hiding, implement horizontal scrolling for mobile devices, add column resizing and reordering capabilities, and ensure touch-friendly interaction on mobile",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement Advanced Analytics Calculations",
+        "description": "Add sophisticated performance metrics including Sharpe ratio, Sortino ratio, profit factor, maximum drawdown, and risk-adjusted returns",
+        "details": "Extend analytics_engine.py with calculate_sharpe_ratio(returns, risk_free_rate=0.02) using daily returns and annualized calculation. Implement calculate_sortino_ratio(returns, target_return=0) focusing on downside deviation. Build calculate_profit_factor() as sum(profits) / abs(sum(losses)), handling zero losses. Create calculate_max_drawdown(cumulative_returns) tracking peak-to-trough declines with recovery periods. Add calculate_calmar_ratio() as annual_return / max_drawdown. Implement risk-adjusted returns using various methodologies. Handle insufficient data gracefully with appropriate warnings. Use NumPy/SciPy for efficient calculations.",
+        "testStrategy": "Test calculations against known financial datasets with verified results. Validate edge cases: no losses for profit factor, no drawdowns, insufficient data for Sharpe. Compare results with established financial analysis tools. Test performance with large datasets.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Sharpe ratio with proper annualization",
+            "description": "Create a robust Sharpe ratio calculation that handles different time periods and annualization factors correctly",
+            "dependencies": [],
+            "details": "Implement calculation of excess returns over risk-free rate, compute standard deviation of returns, handle annualization for different frequencies (daily, weekly, monthly), include proper edge case handling for zero volatility and missing data",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create Sortino ratio focusing on downside risk",
+            "description": "Build Sortino ratio implementation that specifically measures downside deviation and risk-adjusted returns",
+            "dependencies": [
+              1
+            ],
+            "details": "Calculate downside deviation using only negative returns, implement target return parameter (default to risk-free rate or zero), handle semi-variance calculations, ensure proper annualization consistent with Sharpe ratio implementation",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build profit factor and handle edge cases",
+            "description": "Implement profit factor metric calculating ratio of gross profits to gross losses with comprehensive edge case handling",
+            "dependencies": [],
+            "details": "Sum all positive returns (gross profits) and negative returns (gross losses), handle division by zero when no losses occur, implement minimum threshold parameters, consider transaction costs if applicable, return meaningful values for edge cases",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement maximum drawdown with recovery tracking",
+            "description": "Create maximum drawdown calculation with detailed tracking of peak-to-trough declines and recovery periods",
+            "dependencies": [],
+            "details": "Track running maximum values and calculate drawdowns from peaks, identify maximum drawdown magnitude and duration, implement recovery time calculation from trough to new peak, store drawdown periods with start/end dates and depths, handle multiple drawdown periods",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add Calmar ratio and risk-adjusted returns",
+            "description": "Implement Calmar ratio and other risk-adjusted return metrics building on previous calculations",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Calculate Calmar ratio as annualized return divided by maximum drawdown, implement information ratio using benchmark returns, add risk-adjusted return calculations, ensure consistent annualization across all metrics, handle periods with no drawdown",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create comprehensive error handling and data validation",
+            "description": "Implement robust error handling, data validation, and edge case management across all metrics",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Validate input data types and formats, handle missing or NaN values appropriately, implement minimum data requirements for each metric, create informative error messages, add unit tests for edge cases, ensure numerical stability in calculations",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Create Interactive Visualization Components",
+        "description": "Build Plotly-based interactive charts for P&L visualization, cumulative returns, drawdown analysis, and performance comparisons",
+        "details": "Create visualization.py with render_pnl_chart(trades, period='daily'/'weekly'/'monthly') showing bar/line charts with hover details. Build render_cumulative_returns(trades) with area chart and benchmark overlay option. Implement render_drawdown_chart(trades) showing underwater equity curve with recovery periods highlighted. Add render_monthly_heatmap(trades) for calendar view of returns. Create render_distribution_chart(trades) for return distribution analysis. Implement chart customization: theme selection, axis formatting, annotation tools. Add download options for charts as PNG/SVG. Ensure responsive sizing and mobile compatibility.",
+        "testStrategy": "Test chart rendering with various data sizes and time periods. Verify interactivity: zoom, pan, hover tooltips. Test export functionality and image quality. Validate chart accuracy by comparing visual representation with raw data. Test responsive behavior across devices.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Build Multi-Strategy Comparison Dashboard",
+        "description": "Develop side-by-side strategy comparison interface with correlation analysis, performance ranking, and relative metrics display",
+        "details": "Create comparison_dashboard.py with strategy selector allowing 2-10 strategies. Build comparison table showing key metrics side-by-side with visual indicators (sparklines, arrows). Implement calculate_correlation_matrix(strategies) using returns correlation. Create render_correlation_heatmap() with Plotly heatmap and annotations. Add performance_ranking(strategies) sorting by multiple criteria (Sharpe, total return, win rate). Build relative performance charts showing cumulative returns on same axis. Implement strategy weight optimizer suggesting optimal allocation. Add metric cards showing portfolio-level statistics when multiple strategies selected.",
+        "testStrategy": "Test with various strategy combinations (2-10 strategies). Verify correlation calculations accuracy with known relationships. Test ranking algorithm with different metrics and edge cases. Validate portfolio calculations against manual computations. Test UI state management with strategy selection changes.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create strategy selection interface for 2-10 strategies",
+            "description": "Build a multi-select interface that allows users to choose between 2 and 10 trading strategies from available options, with validation and clear visual feedback",
+            "dependencies": [],
+            "details": "Implement a checkbox-based or multi-select dropdown interface with: strategy search/filter functionality, selected count display showing '2-10 strategies selected', validation to enforce min/max selection limits, clear visual indicators for selected vs unselected strategies, and a 'Clear All' / 'Select All' option with proper constraints",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Build comparison table with visual indicators",
+            "description": "Create a comprehensive comparison table displaying key metrics for all selected strategies side-by-side with visual performance indicators",
+            "dependencies": [
+              1
+            ],
+            "details": "Design a responsive table showing: strategy names as column headers, key metrics as rows (returns, Sharpe ratio, max drawdown, volatility, win rate), color-coded cells for quick visual comparison (green for best, red for worst), sortable columns, expandable rows for detailed metrics, and export functionality for the comparison data",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement correlation matrix calculations",
+            "description": "Calculate and display correlation coefficients between all selected strategies to identify diversification opportunities",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement correlation calculations using returns data: compute Pearson correlation coefficients for all strategy pairs, create a symmetric correlation matrix, handle missing or misaligned time series data, calculate rolling correlations for different time windows, and provide correlation strength categorization (high/medium/low)",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create relative performance visualizations",
+            "description": "Develop interactive charts showing comparative performance metrics across selected strategies",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Build multiple visualization types: cumulative returns comparison chart with synchronized time axis, drawdown comparison chart showing concurrent drawdowns, risk-return scatter plot with Sharpe ratio indicators, monthly returns heatmap for each strategy, and interactive tooltips showing exact values on hover",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add portfolio optimization suggestions",
+            "description": "Implement algorithms to suggest optimal portfolio weights based on modern portfolio theory principles",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Create optimization engine featuring: mean-variance optimization for efficient frontier calculation, risk parity weighting suggestions, maximum Sharpe ratio portfolio calculation, minimum variance portfolio option, constraint handling (min/max weights per strategy), and visual representation of suggested allocations with expected portfolio metrics",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop portfolio-level statistics",
+            "description": "Calculate and display aggregate statistics for the combined portfolio based on selected strategies and their weights",
+            "dependencies": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "details": "Implement portfolio calculations including: weighted average returns and volatility, portfolio Sharpe ratio and Sortino ratio, portfolio maximum drawdown analysis, Value at Risk (VaR) and Conditional VaR, portfolio beta relative to benchmark, and real-time updates as strategy weights are adjusted with comparison to individual strategy metrics",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement Confluence Detection System",
+        "description": "Create algorithms to identify signal overlaps between strategies, calculate confluence strength scores, and analyze combined performance",
+        "details": "Build confluence_analyzer.py with find_signal_overlaps(strategies, time_window_hours=24) detecting when multiple strategies have trades within specified windows. Implement calculate_confluence_strength(overlaps) scoring based on number of strategies, time proximity, and historical success rate. Create analyze_confluence_performance(overlaps) comparing returns during confluence vs individual trades. Build confluence_dashboard.py showing overlap timeline, strength indicators, and performance impact. Add confluence opportunity alerts for real-time monitoring. Store results in confluence_analysis table for historical tracking. Implement backtesting to validate confluence effectiveness.",
+        "testStrategy": "Test overlap detection with various time windows and trade patterns. Verify confluence scoring logic with manual calculations. Test performance analysis accuracy. Validate database storage and retrieval. Test with strategies having different trade frequencies and holding periods.",
+        "priority": "low",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design confluence detection algorithm with time windows",
+            "description": "Create the core algorithm architecture for detecting when multiple trading signals align within configurable time windows",
+            "dependencies": [],
+            "details": "Design a flexible algorithm that can identify overlapping signals from different strategies within specified time ranges. Include configurable parameters for time window sizes, minimum signal count thresholds, and signal type categorization. Create data structures to efficiently track and compare signals across multiple timeframes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement signal overlap identification logic",
+            "description": "Build the core logic to identify when signals from different strategies overlap or occur within proximity",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement efficient algorithms to detect signal overlaps using the designed architecture. Include logic for handling different signal types (buy/sell, strong/weak), time-based proximity matching, and edge cases like partial overlaps. Optimize for performance with large datasets.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create confluence strength scoring system",
+            "description": "Develop a quantitative scoring system to measure the strength and reliability of signal confluences",
+            "dependencies": [
+              2
+            ],
+            "details": "Build a weighted scoring mechanism that considers factors like number of aligned signals, signal strength, historical accuracy of involved strategies, time proximity, and market conditions. Include configurable weights and normalization methods to ensure consistent scoring across different scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build performance comparison analytics",
+            "description": "Create analytics to compare confluence-based trading performance against individual strategy performance",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement comprehensive performance metrics including win rate, profit factor, Sharpe ratio, and drawdown analysis. Build comparison charts showing confluence vs individual strategy performance. Include statistical significance testing and confidence intervals for performance differences.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Develop confluence dashboard UI",
+            "description": "Create an interactive dashboard to visualize confluence detection results and analytics",
+            "dependencies": [
+              4
+            ],
+            "details": "Build a responsive UI with real-time confluence visualization, signal timeline views, strength scoring displays, and performance comparison charts. Include filtering options by strategy, time period, and confluence strength. Add drill-down capabilities to examine individual confluence events.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add real-time monitoring and alerts",
+            "description": "Implement real-time confluence detection with configurable alert systems",
+            "dependencies": [
+              5
+            ],
+            "details": "Create a real-time monitoring system that continuously scans for new confluences as signals are generated. Build a flexible alert system with multiple notification channels (email, webhook, UI notifications). Include alert configuration for different confluence strength thresholds and strategy combinations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement backtesting validation",
+            "description": "Build comprehensive backtesting capabilities to validate confluence detection effectiveness",
+            "dependencies": [
+              6
+            ],
+            "details": "Develop a backtesting framework that can replay historical data and validate confluence detection accuracy. Include walk-forward analysis, out-of-sample testing, and Monte Carlo simulations. Generate detailed backtesting reports with performance metrics, trade logs, and statistical validation of results.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Create Export and Reporting Module",
+        "description": "Develop comprehensive export functionality for data and reports in CSV, Excel, and PDF formats with customizable templates",
+        "details": "Create export_manager.py with export_to_csv(data, filename) for raw trade data and aggregated metrics. Implement export_to_excel(data, filename) using openpyxl with multiple sheets: trades, monthly summary, metrics, charts. Build generate_pdf_report(strategy_ids, date_range) creating professional reports with executive summary, performance charts, detailed metrics, and confluence analysis. Add customizable report templates with logo/branding options. Implement scheduled report generation for periodic updates. Create export queue for large reports with progress tracking. Add email delivery option for generated reports.",
+        "testStrategy": "Test export with various data sizes and formats. Verify Excel formulas and formatting preservation. Test PDF generation with different chart types and layouts. Validate file sizes and generation performance. Test scheduled generation and email delivery functionality.",
+        "priority": "low",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CSV export with customizable formats",
+            "description": "Create a flexible CSV export system that allows users to customize column selection, ordering, formatting, and delimiters for their usage metrics data",
+            "dependencies": [],
+            "details": "Build CSV generation service with options for: custom column selection and ordering, configurable delimiters (comma, semicolon, tab), date/time format customization, header row inclusion toggle, data filtering and aggregation options, streaming support for large datasets",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create Excel export with multiple sheets and formatting",
+            "description": "Develop Excel export functionality that supports multiple worksheets, custom formatting, charts, and formulas for comprehensive metrics reporting",
+            "dependencies": [],
+            "details": "Implement Excel generation using a library like ExcelJS or xlsx with features for: multiple sheets for different metric categories, cell formatting (colors, fonts, borders), auto-generated charts and graphs, summary formulas and pivot tables, conditional formatting for threshold alerts, custom headers and footers",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build PDF report generation with templates",
+            "description": "Create a PDF generation system with customizable templates for professional-looking usage metrics reports with charts and branding",
+            "dependencies": [],
+            "details": "Develop PDF generation service using libraries like Puppeteer or jsPDF with: template engine integration (Handlebars/Mustache), dynamic chart generation with Chart.js or D3.js, custom branding with logos and color schemes, page layouts with headers/footers/page numbers, table of contents generation, responsive design for different page sizes",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add scheduled report generation and queuing",
+            "description": "Implement a scheduling system for automated report generation with job queuing to handle multiple concurrent export requests efficiently",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Build scheduling and queue system with: cron-based scheduling for daily/weekly/monthly reports, job queue implementation (Bull/BullMQ or similar), progress tracking and status updates, retry logic for failed exports, resource management for concurrent jobs, cleanup of old generated files",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement email delivery system",
+            "description": "Create an email delivery service that automatically sends generated reports to specified recipients with customizable email templates",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Develop email delivery service with: SMTP configuration and multiple provider support, HTML email templates with inline attachments, recipient list management with groups, delivery status tracking and bounce handling, unsubscribe mechanism compliance, attachment size optimization and compression",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-14T04:39:58.651Z",
+      "updated": "2025-07-14T04:55:42.417Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
