@@ -5,6 +5,11 @@ from .strategy_selector import StrategySelector
 from .upload_feedback import UploadFeedback, create_upload_preview
 from .strategy_forms import StrategyForms
 from .strategy_filters import StrategyFilters
+from .breakdown_tables import BreakdownTables
+from .visualization import VisualizationComponents
+from .comparison_dashboard import ComparisonDashboard
+from .confluence_dashboard import ConfluenceDashboard
+from .export_dashboard import ExportDashboard
 
 __all__ = [
     'FileUploadComponent',
@@ -13,5 +18,10 @@ __all__ = [
     'UploadFeedback',
     'create_upload_preview',
     'StrategyForms',
-    'StrategyFilters'
+    'StrategyFilters',
+    'BreakdownTables',
+    'VisualizationComponents',
+    'ComparisonDashboard',
+    'ConfluenceDashboard',
+    'ExportDashboard'
 ]

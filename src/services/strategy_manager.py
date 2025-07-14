@@ -8,6 +8,7 @@ import logging
 from ..db.connection import DatabaseManager
 from ..models import Strategy, Trade
 from ..db.base_repository import BaseRepository
+from ..analytics.cache_manager import MetricsCacheManager
 
 
 logger = logging.getLogger(__name__)
@@ -72,9 +73,10 @@ class StrategyRepository(BaseRepository[Strategy]):
 class StrategyManager:
     """Service for managing trading strategies."""
     
-    def __init__(self, db_manager: Optional[DatabaseManager] = None):
+    def __init__(self, db_manager: Optional[DatabaseManager] = None, cache_manager: Optional[MetricsCacheManager] = None):
         self.db_manager = db_manager or DatabaseManager()
         self.repository = StrategyRepository(self.db_manager)
+        self.cache_manager = cache_manager or MetricsCacheManager(self.db_manager)
     
     def create_strategy(self, name: str, description: str = "") -> Tuple[Optional[Strategy], Optional[str]]:
         """
@@ -267,6 +269,9 @@ class StrategyManager:
                     cursor.execute("DELETE FROM strategies WHERE id = ?", (strategy_id,))
                     conn.commit()
                     
+                    # Invalidate cache for this strategy
+                    self.cache_manager.invalidate_cache(strategy_id)
+                    
                     logger.info(f"Deleted strategy: {strategy.name} (ID: {strategy_id}) and all related data")
                     return True, None
                 else:
@@ -441,6 +446,9 @@ class StrategyManager:
                 # Update strategy statistics
                 self.repository.update_statistics(strategy_id)
                 
+                # Invalidate cache for this strategy
+                self.cache_manager.invalidate_cache(strategy_id)
+                
                 logger.info(f"Appended {len(trades)} trades to strategy ID: {strategy_id}")
                 return len(trades), None
                 
@@ -513,6 +521,9 @@ class StrategyManager:
                 
                 # Update strategy statistics
                 self.repository.update_statistics(strategy_id)
+                
+                # Invalidate cache for this strategy
+                self.cache_manager.invalidate_cache(strategy_id)
                 
                 logger.info(f"Replaced {deleted_count} trades for strategy ID: {strategy_id} with {len(trades)} new trades")
                 return len(trades), None
