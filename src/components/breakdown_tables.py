@@ -15,7 +15,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from st_aggrid.shared import ColumnsAutoSizeMode
 
 from src.analytics.analytics_engine import AnalyticsEngine
-from src.analytics.cache_manager import CacheManager
+from src.analytics.cache_manager import MetricsCacheManager
 from src.models.strategy import Strategy
 from src.models.trade import Trade
 
@@ -23,7 +23,7 @@ from src.models.trade import Trade
 class BreakdownTables:
     """Interactive breakdown tables for trading performance analysis."""
     
-    def __init__(self, analytics_engine: AnalyticsEngine, cache_manager: CacheManager):
+    def __init__(self, analytics_engine: AnalyticsEngine, cache_manager: MetricsCacheManager):
         """
         Initialize the breakdown tables component.
         

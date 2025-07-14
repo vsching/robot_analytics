@@ -12,7 +12,7 @@ from .base import TimestampedModel
 class Strategy(TimestampedModel):
     """Represents a trading strategy."""
     
-    name: str
+    name: str = ""
     description: Optional[str] = None
     total_trades: int = 0
     total_pnl: Decimal = Decimal('0.00')

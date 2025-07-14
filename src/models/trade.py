@@ -12,10 +12,10 @@ from .base import BaseModel
 class Trade(BaseModel):
     """Represents a single trade."""
     
-    strategy_id: int
-    trade_date: date
-    symbol: str
-    side: str  # 'long', 'short', 'buy', 'sell'
+    strategy_id: int = 0
+    trade_date: date = date.today()
+    symbol: str = ""
+    side: str = ""  # 'long', 'short', 'buy', 'sell'
     entry_price: Optional[Decimal] = None
     exit_price: Optional[Decimal] = None
     quantity: Optional[Decimal] = None
