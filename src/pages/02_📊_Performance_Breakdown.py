@@ -11,7 +11,7 @@ from datetime import datetime
 from src.components.breakdown_tables import BreakdownTables
 from src.components.strategy_selector import StrategySelector
 from src.analytics.analytics_engine import AnalyticsEngine
-from src.analytics.cache_manager import CacheManager
+from src.analytics.cache_manager import MetricsCacheManager
 from src.db.strategy_repository import StrategyRepository
 from src.db.trade_repository import TradeRepository
 from src.services.strategy_manager import StrategyManager
@@ -37,7 +37,7 @@ def init_components():
     trade_repo = TradeRepository()
     strategy_manager = StrategyManager(strategy_repo, trade_repo)
     analytics_engine = AnalyticsEngine()  # Uses its own db_manager
-    cache_manager = CacheManager()
+    cache_manager = MetricsCacheManager()
     return strategy_manager, analytics_engine, cache_manager, strategy_repo
 
 strategy_manager, analytics_engine, cache_manager, strategy_repo = init_components()

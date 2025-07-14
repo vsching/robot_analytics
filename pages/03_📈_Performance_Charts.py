@@ -51,8 +51,8 @@ def main():
             # Get trade date range
             trades = analytics_engine.get_trades_for_strategy(selected_strategy_id)
             if trades:
-                min_date = min(t.trade_date for t in trades)
-                max_date = max(t.trade_date for t in trades)
+                min_date = min((t.trade_date.date() if hasattr(t.trade_date, 'date') else t.trade_date) for t in trades)
+                max_date = max((t.trade_date.date() if hasattr(t.trade_date, 'date') else t.trade_date) for t in trades)
                 
                 with col1:
                     start_date = st.date_input(
@@ -71,7 +71,9 @@ def main():
                     )
                 
                 # Filter trades by date
-                trades = [t for t in trades if start_date <= t.trade_date <= end_date]
+                # Convert trade_date to date if it's a datetime
+                trades = [t for t in trades 
+                         if start_date <= (t.trade_date.date() if hasattr(t.trade_date, 'date') else t.trade_date) <= end_date]
     
     # Main content area
     if selected_strategy_id and trades:

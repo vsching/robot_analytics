@@ -19,6 +19,7 @@ class MetricsCacheManager:
     def __init__(self, db_manager: Optional[DatabaseManager] = None):
         self.db_manager = db_manager or DatabaseManager()
         self._cache_ttl = timedelta(hours=1)  # Default cache TTL
+        self._memory_cache = {}  # In-memory cache for general data
     
     def get_cached_metrics(self, strategy_id: int, metric_type: str = 'all-time') -> Optional[PerformanceMetrics]:
         """
@@ -311,6 +312,42 @@ class MetricsCacheManager:
         """
         self._cache_ttl = timedelta(hours=hours)
         logger.info(f"Set cache TTL to {hours} hours")
+    
+    def get(self, key: str) -> Optional[Any]:
+        """
+        Get value from memory cache.
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            Cached value or None
+        """
+        if key in self._memory_cache:
+            entry = self._memory_cache[key]
+            if datetime.utcnow() < entry['expires_at']:
+                return entry['value']
+            else:
+                # Remove expired entry
+                del self._memory_cache[key]
+        return None
+    
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        """
+        Set value in memory cache.
+        
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Time to live in seconds (default: 300)
+        """
+        if ttl is None:
+            ttl = 300  # 5 minutes default
+        
+        self._memory_cache[key] = {
+            'value': value,
+            'expires_at': datetime.utcnow() + timedelta(seconds=ttl)
+        }
 
 
 class CachedAnalyticsEngine:
@@ -353,3 +390,7 @@ class CachedAnalyticsEngine:
     def get_cache_info(self) -> Dict[str, Any]:
         """Get cache information."""
         return self.cache.get_cache_stats()
+    
+    def __getattr__(self, name):
+        """Delegate unknown attributes to the wrapped engine."""
+        return getattr(self.engine, name)

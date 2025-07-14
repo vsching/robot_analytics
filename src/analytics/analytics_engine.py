@@ -109,7 +109,7 @@ class AnalyticsEngine:
         profit_factor = float(total_wins / total_losses) if total_losses > 0 else 0
         
         # Expectancy
-        expectancy = (win_rate/100 * average_win) + ((100-win_rate)/100 * average_loss)
+        expectancy = (Decimal(win_rate)/Decimal(100) * average_win) + ((100-Decimal(win_rate))/Decimal(100) * average_loss)
         
         # Calculate consecutive wins/losses
         consecutive_stats = self._calculate_consecutive_stats(trades_with_pnl)

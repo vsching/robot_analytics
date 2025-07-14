@@ -35,7 +35,7 @@ class TradeRepository(BaseRepository[Trade]):
             'entry_time': model.entry_time.isoformat() if model.entry_time else None,
             'exit_time': model.exit_time.isoformat() if model.exit_time else None,
             'duration_hours': float(model.duration_hours) if model.duration_hours else None,
-            'created_at': model.created_at
+            'created_at': model.created_at.isoformat() if model.created_at else None
         }
     
     def get_by_strategy(self, strategy_id: int, 

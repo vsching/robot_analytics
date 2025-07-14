@@ -9,7 +9,7 @@ filtering, and export capabilities using streamlit-aggrid.
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Dict, Any, Optional, List, Tuple
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from st_aggrid.shared import ColumnsAutoSizeMode
@@ -57,9 +57,7 @@ class BreakdownTables:
                 }).format(Math.abs(value));
                 
                 if (value < 0) {
-                    return '<span style="color: #FF4B4B;">' + '-' + formatted.slice(1) + '</span>';
-                } else if (value > 0) {
-                    return '<span style="color: #00CC88;">' + formatted + '</span>';
+                    return '-' + formatted.slice(1);
                 } else {
                     return formatted;
                 }
@@ -70,15 +68,7 @@ class BreakdownTables:
             function(params) {
                 if (params.value == null) return '';
                 const value = parseFloat(params.value);
-                const formatted = value.toFixed(2) + '%';
-                
-                if (value < 0) {
-                    return '<span style="color: #FF4B4B;">' + formatted + '</span>';
-                } else if (value > 0) {
-                    return '<span style="color: #00CC88;">' + formatted + '</span>';
-                } else {
-                    return formatted;
-                }
+                return value.toFixed(2) + '%';
             }
         """)
         
@@ -117,7 +107,9 @@ class BreakdownTables:
             sortable=True,
             editable=False,
             flex=1,
-            min_width=100
+            min_width=100,
+            wrapText=True,
+            autoHeight=True
         )
         
         # Configure specific column formatting
@@ -126,7 +118,18 @@ class BreakdownTables:
                 gb.configure_column(
                     col,
                     cellRenderer=self.currency_renderer,
-                    type=["numericColumn", "customCurrencyFormat"]
+                    type=["numericColumn", "customCurrencyFormat"],
+                    cellStyle=JsCode("""
+                        function(params) {
+                            const style = {'text-align': 'right'};
+                            if (params.value < 0) {
+                                style['color'] = '#FF4B4B';
+                            } else if (params.value > 0) {
+                                style['color'] = '#00CC88';
+                            }
+                            return style;
+                        }
+                    """)
                 )
         
         if percentage_columns:
@@ -135,7 +138,18 @@ class BreakdownTables:
                     gb.configure_column(
                         col,
                         cellRenderer=self.percentage_renderer,
-                        type=["numericColumn", "customPercentageFormat"]
+                        type=["numericColumn", "customPercentageFormat"],
+                        cellStyle=JsCode("""
+                            function(params) {
+                                const style = {'text-align': 'right'};
+                                if (params.value < 50) {
+                                    style['color'] = '#FF4B4B';
+                                } else if (params.value > 50) {
+                                    style['color'] = '#00CC88';
+                                }
+                                return style;
+                            }
+                        """)
                     )
         
         if integer_columns:
@@ -180,7 +194,7 @@ class BreakdownTables:
         
         return gb
 
-    def monthly_breakdown_table(self, strategy_id: int, date_range: Optional[Tuple[datetime, datetime]] = None) -> None:
+    def monthly_breakdown_table(self, strategy_id: int, date_range: Optional[Tuple[date, date]] = None) -> None:
         """
         Display monthly breakdown table for a strategy.
         
@@ -242,7 +256,7 @@ class BreakdownTables:
         if st.button("Export Monthly Data", key="export_monthly"):
             self._export_data(df, f"monthly_breakdown_{strategy_id}")
 
-    def weekly_breakdown_table(self, strategy_id: int, date_range: Optional[Tuple[datetime, datetime]] = None) -> None:
+    def weekly_breakdown_table(self, strategy_id: int, date_range: Optional[Tuple[date, date]] = None) -> None:
         """
         Display weekly breakdown table for a strategy.
         
@@ -305,7 +319,7 @@ class BreakdownTables:
         if st.button("Export Weekly Data", key="export_weekly"):
             self._export_data(df, f"weekly_breakdown_{strategy_id}")
 
-    def _prepare_monthly_data(self, strategy_id: int, date_range: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:
+    def _prepare_monthly_data(self, strategy_id: int, date_range: Optional[Tuple[date, date]] = None) -> pd.DataFrame:
         """
         Prepare monthly aggregated data for display.
         
@@ -368,7 +382,7 @@ class BreakdownTables:
         
         return df
 
-    def _prepare_weekly_data(self, strategy_id: int, date_range: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:
+    def _prepare_weekly_data(self, strategy_id: int, date_range: Optional[Tuple[date, date]] = None) -> pd.DataFrame:
         """
         Prepare weekly aggregated data for display.
         
@@ -463,7 +477,7 @@ class BreakdownTables:
             mime='text/csv'
         )
 
-    def render_period_selector(self) -> Optional[Tuple[datetime, datetime]]:
+    def render_period_selector(self) -> Optional[Tuple[date, date]]:
         """
         Render date range selector for filtering data.
         
@@ -487,7 +501,6 @@ class BreakdownTables:
             )
         
         if start_date and end_date:
-            return (datetime.combine(start_date, datetime.min.time()),
-                   datetime.combine(end_date, datetime.max.time()))
+            return (start_date, end_date)
         
         return None

@@ -501,9 +501,11 @@ class VisualizationComponents:
                 "<extra></extra>"
             ),
             colorbar=dict(
-                title="P&L ($)",
-                tickfont=dict(color=self.text_color),
-                titlefont=dict(color=self.text_color)
+                title=dict(
+                    text="P&L ($)",
+                    font=dict(color=self.text_color)
+                ),
+                tickfont=dict(color=self.text_color)
             )
         ))
         
@@ -516,7 +518,7 @@ class VisualizationComponents:
         )
         
         # Reverse y-axis to show recent years at top
-        fig.update_yaxis(autorange="reversed")
+        fig.update_yaxes(autorange="reversed")
         
         return fig
     

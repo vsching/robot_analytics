@@ -13,7 +13,7 @@ class Trade(BaseModel):
     """Represents a single trade."""
     
     strategy_id: int = 0
-    trade_date: date = date.today()
+    trade_date: date = None
     symbol: str = ""
     side: str = ""  # 'long', 'short', 'buy', 'sell'
     entry_price: Optional[Decimal] = None
@@ -69,8 +69,17 @@ class Trade(BaseModel):
         """Create trade from dictionary."""
         # Handle date/time conversions
         trade_date = data.get('trade_date')
-        if trade_date and isinstance(trade_date, str):
-            trade_date = date.fromisoformat(trade_date)
+        if trade_date:
+            if isinstance(trade_date, str):
+                # Handle both date and datetime strings
+                if 'T' in trade_date or ' ' in trade_date:
+                    # It's a datetime string, convert to date
+                    trade_date = datetime.fromisoformat(trade_date.replace(' ', 'T').split('.')[0]).date()
+                else:
+                    trade_date = date.fromisoformat(trade_date)
+            elif isinstance(trade_date, datetime):
+                # Convert datetime to date
+                trade_date = trade_date.date()
         
         entry_time = data.get('entry_time')
         if entry_time and isinstance(entry_time, str):
