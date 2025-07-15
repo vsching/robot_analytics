@@ -42,7 +42,7 @@ def authenticated_page(
     login_component = LoginComponent(auth_manager)
     
     # Check if authenticated
-    if not auth_manager.is_authenticated():
+    if not auth_manager.is_authenticated(st.session_state):
         # Show login page
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:

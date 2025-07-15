@@ -1,6 +1,7 @@
 """Simple authentication check for Streamlit pages."""
 
 import streamlit as st
+from datetime import datetime, timedelta
 
 
 def check_authentication():
@@ -11,13 +12,14 @@ def check_authentication():
     """
     if not st.session_state.get('authenticated', False):
         st.warning("🔒 Please login to access this page.")
+        st.page_link("main.py", label="Go to Login", icon="🏠")
         st.stop()
     
     # Check session timeout
     if 'login_time' in st.session_state:
-        from datetime import datetime, timedelta
         login_time = st.session_state['login_time']
-        if datetime.now() - login_time > timedelta(minutes=30):
+        if isinstance(login_time, datetime) and datetime.now() - login_time > timedelta(minutes=30):
             st.session_state.clear()
             st.warning("⏱️ Your session has expired. Please login again.")
+            st.page_link("main.py", label="Go to Login", icon="🏠")
             st.stop()

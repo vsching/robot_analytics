@@ -58,7 +58,7 @@ class LoginComponent:
                 st.error("Please enter password")
                 return False
             
-            if self.auth_manager.login(username, password):
+            if self.auth_manager.login(username, password, st.session_state):
                 st.success(f"Welcome back, {username}!")
                 st.rerun()
                 return True
@@ -70,7 +70,7 @@ class LoginComponent:
     
     def render_user_menu(self):
         """Render user menu in sidebar."""
-        username = self.auth_manager.get_current_user()
+        username = self.auth_manager.get_current_user(st.session_state)
         
         if username:
             with st.sidebar:
@@ -84,7 +84,7 @@ class LoginComponent:
                 
                 with col2:
                     if st.button("Logout", use_container_width=True):
-                        self.auth_manager.logout()
+                        self.auth_manager.logout(st.session_state)
                         st.rerun()
                 
                 # Session info
@@ -96,7 +96,7 @@ class LoginComponent:
     
     def render_profile_page(self):
         """Render user profile page."""
-        username = self.auth_manager.get_current_user()
+        username = self.auth_manager.get_current_user(st.session_state)
         
         if not username:
             st.error("Not logged in")
@@ -150,7 +150,7 @@ class LoginComponent:
         Args:
             render_func: Function to render the page content
         """
-        if not self.auth_manager.is_authenticated():
+        if not self.auth_manager.is_authenticated(st.session_state):
             # Center the login form
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:

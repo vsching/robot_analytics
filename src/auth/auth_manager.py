@@ -4,7 +4,6 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, Tuple
-import streamlit as st
 from dataclasses import dataclass
 import json
 import os
@@ -134,56 +133,60 @@ class AuthManager:
         
         return False
     
-    def login(self, username: str, password: str) -> bool:
+    def login(self, username: str, password: str, session_state: Dict[str, Any]) -> bool:
         """
         Log in user and create session.
         
         Args:
             username: Username
             password: Plain text password
+            session_state: Streamlit session state dict
             
         Returns:
             True if login successful
         """
         if self.authenticate(username, password):
             # Set session state
-            st.session_state['authenticated'] = True
-            st.session_state['username'] = username
-            st.session_state['login_time'] = datetime.now()
-            st.session_state['session_token'] = secrets.token_urlsafe(32)
+            session_state['authenticated'] = True
+            session_state['username'] = username
+            session_state['login_time'] = datetime.now()
+            session_state['session_token'] = secrets.token_urlsafe(32)
             return True
         return False
     
-    def logout(self):
+    def logout(self, session_state: Dict[str, Any]):
         """Log out current user and clear session."""
         keys_to_remove = ['authenticated', 'username', 'login_time', 'session_token']
         for key in keys_to_remove:
-            if key in st.session_state:
-                del st.session_state[key]
+            if key in session_state:
+                del session_state[key]
     
-    def is_authenticated(self) -> bool:
+    def is_authenticated(self, session_state: Dict[str, Any]) -> bool:
         """
         Check if user is authenticated and session is valid.
         
+        Args:
+            session_state: Streamlit session state dict
+            
         Returns:
             True if authenticated and session valid
         """
-        if not st.session_state.get('authenticated', False):
+        if not session_state.get('authenticated', False):
             return False
         
         # Check session timeout
-        login_time = st.session_state.get('login_time')
+        login_time = session_state.get('login_time')
         if login_time:
             if datetime.now() - login_time > self.session_timeout:
-                self.logout()
+                self.logout(session_state)
                 return False
         
         return True
     
-    def get_current_user(self) -> Optional[str]:
+    def get_current_user(self, session_state: Dict[str, Any]) -> Optional[str]:
         """Get current logged in username."""
-        if self.is_authenticated():
-            return st.session_state.get('username')
+        if self.is_authenticated(session_state):
+            return session_state.get('username')
         return None
     
     def change_password(self, username: str, old_password: str, new_password: str) -> Tuple[bool, str]:

@@ -56,4 +56,20 @@ def main_page():
         st.info("🔄 Version: 1.0.0")
 
 # Apply authentication
-login_component.require_auth(main_page)
+if not auth_manager.is_authenticated(st.session_state):
+    # Show login page
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        login_component.render_login_form()
+else:
+    # Show main page and user menu
+    login_component.render_user_menu()
+    
+    # Check if profile page should be shown
+    if st.session_state.get('show_profile', False):
+        login_component.render_profile_page()
+        if st.button("← Back to App"):
+            st.session_state['show_profile'] = False
+            st.rerun()
+    else:
+        main_page()
