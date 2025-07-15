@@ -5,8 +5,8 @@ from pathlib import Path
 # Add src to path
 sys.path.append(str(Path(__file__).parent))
 
-from src.auth import AuthManager
-from src.components import LoginComponent
+from src.auth.auth_manager import AuthManager
+from src.components.login import LoginComponent
 
 # Page configuration
 st.set_page_config(

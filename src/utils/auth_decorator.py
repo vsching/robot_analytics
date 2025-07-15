@@ -4,8 +4,8 @@ import streamlit as st
 from functools import wraps
 from typing import Callable
 
-from src.auth import AuthManager
-from src.components import LoginComponent
+from src.auth.auth_manager import AuthManager
+from src.components.login import LoginComponent
 
 
 def require_authentication(func: Callable) -> Callable:

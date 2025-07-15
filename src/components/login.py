@@ -2,7 +2,7 @@
 
 import streamlit as st
 from typing import Optional, Callable
-from src.auth import AuthManager
+from src.auth.auth_manager import AuthManager
 
 
 class LoginComponent:
