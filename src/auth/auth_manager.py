@@ -45,10 +45,14 @@ class AuthManager:
             try:
                 with open(self.users_file, 'r') as f:
                     users_data = json.load(f)
-                    self.users = {
-                        username: User(**user_data) 
-                        for username, user_data in users_data.items()
-                    }
+                    self.users = {}
+                    for username, user_data in users_data.items():
+                        # Convert string dates back to datetime objects
+                        if user_data.get('last_login'):
+                            user_data['last_login'] = datetime.fromisoformat(user_data['last_login'])
+                        if user_data.get('created_at'):
+                            user_data['created_at'] = datetime.fromisoformat(user_data['created_at'])
+                        self.users[username] = User(**user_data)
             except Exception as e:
                 st.error(f"Error loading users: {e}")
                 self.users = {}
@@ -66,12 +70,21 @@ class AuthManager:
         """Save users to JSON file."""
         users_data = {}
         for username, user in self.users.items():
+            # Handle both datetime objects and strings
+            last_login = user.last_login
+            if last_login and hasattr(last_login, 'isoformat'):
+                last_login = last_login.isoformat()
+            
+            created_at = user.created_at
+            if created_at and hasattr(created_at, 'isoformat'):
+                created_at = created_at.isoformat()
+            
             users_data[username] = {
                 'username': user.username,
                 'password_hash': user.password_hash,
                 'is_active': user.is_active,
-                'last_login': user.last_login.isoformat() if user.last_login else None,
-                'created_at': user.created_at.isoformat() if user.created_at else None
+                'last_login': last_login,
+                'created_at': created_at
             }
         
         with open(self.users_file, 'w') as f:
