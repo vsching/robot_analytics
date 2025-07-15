@@ -20,7 +20,14 @@ class User:
     created_at: datetime = None
     
     def __post_init__(self):
-        if self.created_at is None:
+        # Handle string dates that might come from JSON
+        if self.last_login and isinstance(self.last_login, str):
+            self.last_login = datetime.fromisoformat(self.last_login)
+        
+        if self.created_at:
+            if isinstance(self.created_at, str):
+                self.created_at = datetime.fromisoformat(self.created_at)
+        else:
             self.created_at = datetime.now()
 
 
@@ -45,17 +52,24 @@ class AuthManager:
             try:
                 with open(self.users_file, 'r') as f:
                     users_data = json.load(f)
-                    self.users = {}
-                    for username, user_data in users_data.items():
-                        # Convert string dates back to datetime objects
-                        if user_data.get('last_login'):
-                            user_data['last_login'] = datetime.fromisoformat(user_data['last_login'])
-                        if user_data.get('created_at'):
-                            user_data['created_at'] = datetime.fromisoformat(user_data['created_at'])
-                        self.users[username] = User(**user_data)
+                    self.users = {
+                        username: User(**user_data) 
+                        for username, user_data in users_data.items()
+                    }
             except Exception as e:
-                st.error(f"Error loading users: {e}")
-                self.users = {}
+                print(f"Error loading users: {e}")
+                # If there's an error, recreate default admin user
+                self.users = {
+                    'admin': User(
+                        username='admin',
+                        password_hash=self._hash_password('admin123')
+                    )
+                }
+                # Try to save the clean version
+                try:
+                    self._save_users()
+                except:
+                    pass
         else:
             # Create default admin user if no users file exists
             self.users = {
