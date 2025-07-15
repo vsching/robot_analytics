@@ -7,7 +7,7 @@ import io
 import time
 from datetime import datetime
 
-from src.utils import CSVProcessor, ValidationSeverity, get_session_manager, require_authentication
+from src.utils import CSVProcessor, ValidationSeverity, get_session_manager, check_authentication
 from src.services import StrategyManager
 from src.models import Strategy, Trade
 from src.components import FileUploadComponent, StrategySelector, UploadFeedback, StrategyForms, StrategyFilters
@@ -28,6 +28,9 @@ strategy_forms = StrategyForms(strategy_manager)
 strategy_filters = StrategyFilters(strategy_manager)
 session_manager = get_session_manager()
 
+
+# Check authentication
+check_authentication()
 
 def main():
     st.title("📁 Strategy Management")
@@ -474,5 +477,4 @@ def formats_tab():
 
 
 if __name__ == "__main__":
-    # Apply authentication
-    require_authentication(main)()
+    main()

@@ -8,6 +8,7 @@ from .csv_formats import Platform, CSVFormat, FORMATS, get_format
 from .csv_streamer import CSVStreamer, StreamingCSVProcessor, ChunkResult
 from .session_state import SessionStateManager, get_session_manager
 from .auth_decorator import require_authentication
+from .auth_check import check_authentication
 
 __all__ = [
     'CSVProcessor',
@@ -26,5 +27,6 @@ __all__ = [
     'ChunkResult',
     'SessionStateManager',
     'get_session_manager',
-    'require_authentication'
+    'require_authentication',
+    'check_authentication'
 ]

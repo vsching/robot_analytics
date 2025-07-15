@@ -7,7 +7,9 @@ multiple trading strategies, helping identify stronger trading opportunities.
 
 import streamlit as st
 from datetime import datetime, timedelta
+import plotly.express as px
 
+from src.utils.auth_check import check_authentication
 from src.db.connection import get_db_manager
 from src.services.strategy_manager import StrategyManager
 from src.analytics import AnalyticsEngine, CachedAnalyticsEngine, MetricsCacheManager
@@ -15,12 +17,18 @@ from src.components import VisualizationComponents
 from src.components.confluence_dashboard import ConfluenceDashboard
 
 
+# Page configuration
+st.set_page_config(
+    page_title="Confluence Detection - Trading Strategy Analyzer",
+    page_icon="🎯",
+    layout="wide"
+)
+
+# Check authentication
+check_authentication()
+
+
 def main():
-    st.set_page_config(
-        page_title="Confluence Detection - Trading Strategy Analyzer",
-        page_icon="🎯",
-        layout="wide"
-    )
     
     st.title("🎯 Signal Confluence Detection")
     st.markdown("""

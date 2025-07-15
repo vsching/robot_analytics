@@ -8,18 +8,25 @@ Supports CSV, Excel, and PDF exports with customizable templates and settings.
 import streamlit as st
 from datetime import datetime
 
+from src.utils.auth_check import check_authentication
 from src.db.connection import get_db_manager
 from src.services.strategy_manager import StrategyManager
 from src.analytics import AnalyticsEngine, CachedAnalyticsEngine, MetricsCacheManager
 from src.components.export_dashboard import ExportDashboard
 
 
+# Page configuration
+st.set_page_config(
+    page_title="Export & Reports - Trading Strategy Analyzer",
+    page_icon="📥",
+    layout="wide"
+)
+
+# Check authentication
+check_authentication()
+
+
 def main():
-    st.set_page_config(
-        page_title="Export & Reports - Trading Strategy Analyzer",
-        page_icon="📥",
-        layout="wide"
-    )
     
     st.title("📥 Export & Reports")
     st.markdown("""
