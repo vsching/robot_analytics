@@ -34,11 +34,7 @@ def authenticated_page(
     )
     
     # Initialize authentication
-    @st.cache_resource
-    def get_auth_manager():
-        return AuthManager()
-    
-    auth_manager = get_auth_manager()
+    auth_manager = AuthManager()
     login_component = LoginComponent(auth_manager)
     
     # Check if authenticated
